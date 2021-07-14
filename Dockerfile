@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi
+FROM registry.access.redhat.com/rhel8/ubi
 
 ENV SUMMARY="MongoDB NoSQL database server" \
     DESCRIPTION="MongoDB (from humongous) is a free and open-source \
@@ -21,6 +21,13 @@ ENV MONGODB_VERSION=3.6 \
     SCRIPTS_PATH=/opt/bin
 ENV PATH=$SCRIPTS_PATH:$PATH
 
+# Copy entitlements
+COPY ./etc-pki-entitlement /etc/pki/entitlement
+
+# Copy subscription manager configurations
+COPY ./rhsm-conf /etc/rhsm
+COPY ./rhsm-ca /etc/rhsm/ca
+
 COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 
 # mongodb-org package will install:
@@ -30,16 +37,19 @@ COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 #   4. mongodb-org-tools – Tools (dump, restore, etc)
 
 # Package setup
-RUN add-mongodb-repo && \
+RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
+    rm /etc/rhsm-host && \
+    yum repolist --disablerepo=* && \
+    add-mongodb-repo && \
     yum update && \
     yum upgrade && \
-    INSTALL_PKGS="rsync jq hostname procps mongodb-org" && \
+    subscription-manager repos --enable "rhel-8-for-x86_64-baseos-rpms" && \
     yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
     yum clean all -y && \
     rm -rf /var/cache/yum
 
 # Increment this to trigger a rebuild from this layer onwards.
-ENV IMG_BUILD_VERSION=3
+ENV IMG_BUILD_VERSION=5
 
 COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms

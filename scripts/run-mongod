@@ -57,6 +57,10 @@ gen_key_file() {
 }
 
 start_mongod() {
+  # Mongo suggest launching mongod with `numactl` to 
+  # avoid performance problems on NUMA machines.
+  numactl \
+  --interleave=all \
   mongod \
   -f /etc/mongod.conf \
   --auth \

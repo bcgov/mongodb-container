@@ -46,6 +46,17 @@ objects:
           kind: ImageStreamTag
           name: "mongodb-repset:${VERSION}"
       source:
+        secrets:
+        - secret:
+            name: platform-services-controlled-etc-pki-entitlement
+          destinationDir: etc-pki-entitlement
+        configMaps:
+        - configMap:
+            name: platform-services-controlled-rhsm-conf
+          destinationDir: rhsm-conf
+        - configMap:
+            name: platform-services-controlled-rhsm-ca
+          destinationDir: rhsm-ca
         contextDir: /
         git:
           ref: ${GIT_REF}
@@ -53,9 +64,10 @@ objects:
         type: Git
       strategy:
         dockerStrategy:
+          imageOptimizationPolicy: SkipLayers
           from:
             kind: DockerImage
-            name: registry.access.redhat.com/ubi8/ubi:latest
+            name: registry.access.redhat.com/rhel8:latest
         type: Docker
       triggers:
         - type: ConfigChange
