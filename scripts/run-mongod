@@ -1,0 +1,304 @@
+#!/bin/bash
+# Copyright 2021 The Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Copyright 2021 SCLORG
+# Ref. https://github.com/sclorg/mongodb-container/LICENCE
+#
+
+set -euo pipefail
+
+# Constants
+readonly KEY_FILE=/var/lib/mongodb/keyfile
+readonly MAX_ATTEMPTS=60
+readonly SLEEP_TIME=1
+readonly ROOT_AUTH_DB='admin'
+
+# Fully Qualifed Nost Name
+# ie. mongodb-0.mongodb-internal.6e2f11-prod.svc.cluster.local
+readonly FQ_HOST_NAME="$(hostname -f)"
+# Short Host Name
+# ie. mongodb-0
+readonly HOST_NAME="$(hostname)"
+# Member ID
+# ie. 0
+readonly MEMBER_ID="${HOST_NAME##*-}"
+
+#
+# funcitons
+#
+
+log() {
+  echo "INFO : $@";
+}
+
+# function to use by extension scripts instead of mongo shell binary
+# - to be able to change shell params in all scripts
+# for example to use SSL certificate
+mongo_cmd() {
+  mongo --quiet $@;
+}
+
+# generate keyfile
+gen_key_file() {
+  echo ${MONGODB_KEYFILE_VALUE} >>${KEY_FILE}
+  chmod 600 ${KEY_FILE}
+}
+
+start_mongod() {
+  mongod \
+  -f /etc/mongod.conf \
+  --auth \
+  --keyFile ${KEY_FILE} \
+  --replSet ${MONGODB_REPLICA_NAME} &
+}
+
+start_mongod_local() {
+  mongod \
+  -f /etc/mongod.conf \
+  --bind_ip localhost \
+  --noauth &
+}
+
+stop_mongod() {
+
+  # Options to shutdown mongodb can be found here:
+  # Ref. https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/#std-label-terminate-mongod-processes
+
+  mongod \
+  -f /etc/mongod.conf \
+  --shutdown
+}
+
+# wait_for_mongo_up waits until the mongo server accepts incomming connections
+wait_for_mongo_up() {
+  _wait_for_mongo 1
+}
+
+# wait_for_mongo_down waits until the mongo server is down
+wait_for_mongo_down() {
+  _wait_for_mongo 0
+}
+
+# wait_for_mongo waits until the mongo server is up/down
+# $1 - 0 or 1 - to specify for what to wait (0 - down, 1 - up)
+_wait_for_mongo() {
+  local operation=${1:-1}
+  local message="up"
+
+  if [[ ${operation} -eq 0 ]]; then
+    message="down"
+  fi
+
+  local i
+  for i in $(seq $MAX_ATTEMPTS); do
+    if ([[ ${operation} -eq 1 ]] && mongo_cmd localhost <<< "quit()" 2>&1 >/dev/null) || ([[ ${operation} -eq 0 ]] && ! mongo_cmd localhost <<< "quit()" 2>&1 >/dev/null); then
+      log "mongoDB daemon is ${message}"
+      return 0
+    fi
+    sleep ${SLEEP_TIME}
+  done
+
+  log "Giving up: MongoDB daemon is not ${message}!"
+  return 1
+}
+
+init_replicat_set() {
+  local host_to_add="$1"
+  local config="{_id: '${MONGODB_REPLICA_NAME}', members: [{_id: 0, host: '${host_to_add}'}]}"
+
+  # Initalize the replica set
+  log "Configuring replica set"
+  mongo_cmd --host localhost \
+  -u ${MONGODB_ADMIN_USERNAME} \
+  -p ${MONGODB_ADMIN_PASSWORD} \
+  <<<"quit(rs.initiate(${config}).ok)"
+
+  # Wait for PRIMARY
+  log "Waiting for PRIMARY"
+  mongo_cmd --host localhost \
+  -u ${MONGODB_ADMIN_USERNAME} \
+  -p ${MONGODB_ADMIN_PASSWORD} \
+  <<<"while (!rs.isMaster().ismaster) { sleep(100); }"
+
+  log "PRIMARY is now on-line"
+}
+
+add_member_to_replicat_set() {
+  local host_to_add="$1"
+  local mongo_host="${MONGODB_SERVICE_NAME}"
+
+  log "Adding ${host_to_add} to replica set ..."
+
+  # All the `rs.*` commands need to be run on the
+  # PRIMARY. Lookup the PRIMARY and use that to
+  # add additional hosts.
+
+  local primary=$(mongo_cmd --host ${MONGODB_SERVICE_NAME} -u ${MONGODB_ADMIN_USERNAME} -p ${MONGODB_ADMIN_PASSWORD} <<< "JSON.stringify(rs.status())" | jq -r '.members[] | select(.stateStr == "PRIMARY") | .name')
+  
+  if ! [ -z "${primary}" ]; then
+    log "Found PRIMARY ${mongo_host}"
+    mongo_host="${primary}"
+  fi
+
+  mongo_cmd --host ${mongo_host} \
+  -u ${MONGODB_ADMIN_USERNAME} \
+  -p ${MONGODB_ADMIN_PASSWORD} \
+  <<< "quit(rs.add('${host_to_add}').ok)"
+
+  log "Successfully joined replica set"
+}
+
+remove_member_from_replicat_set() {
+  local host_to_remove="$1"
+  local mongo_host="${MONGODB_SERVICE_NAME}"
+
+  log "Removing ${host_to_remove} from replica set ..."
+
+  # All the `rs.*` commands need to be run on the
+  # PRIMARY. Lookup the PRIMARY and use that to
+  # add additional hosts.
+
+  local primary=$(mongo_cmd --host ${MONGODB_SERVICE_NAME} -u ${MONGODB_ADMIN_USERNAME} -p ${MONGODB_ADMIN_PASSWORD} <<< "JSON.stringify(rs.status())" | jq -r '.members[] | select(.stateStr == "PRIMARY") | .name')
+  
+  if ! [ -z "${primary}" ]; then
+    log "Found PRIMARY ${mongo_host}"
+    mongo_host="${primary}"
+  fi
+
+  mongo_cmd --host ${mongo_host} \
+  -u ${MONGODB_ADMIN_USERNAME} \
+  -p ${MONGODB_ADMIN_PASSWORD} \
+  <<< "quit(rs.remove('${host_to_remove}').ok)"
+
+  log "Successfully removed from replica set"
+}
+
+add_root_user_if_required() {
+  local user="{user: '${MONGODB_ADMIN_USERNAME}', pwd: '${MONGODB_ADMIN_PASSWORD}', roles: [ { role: 'root', db: '${ROOT_AUTH_DB}' } ]}"
+  local haz_admin=$(mongo_cmd --host localhost ${ROOT_AUTH_DB} <<< "db.system.users.count({user:'${MONGODB_ADMIN_USERNAME}'})")
+  
+  if [ $haz_admin -eq 0 ]; then
+    # Initalize the replica set
+    log "Adding admin user ${MONGODB_ADMIN_USERNAME}"
+    mongo_cmd --host localhost ${ROOT_AUTH_DB} \
+    <<<"quit(db.createUser(${user}))"
+  else 
+    log "Admin already exists. Skipping."
+  fi
+}
+
+add_app_user_if_required() {
+  local user="{user: '${MONGODB_USER}', pwd: '${MONGODB_PASSWORD}', roles: [ { role: 'dbOwner', db: '${MONGODB_DATABASE}' } ]}"
+  local haz_user=$(mongo_cmd --host localhost ${ROOT_AUTH_DB} <<< "db.system.users.count({user:'${MONGODB_USER}'})")
+  
+  if [ $haz_user -eq 0 ]; then
+    # Initalize the replica set
+    log "Adding app user ${MONGODB_USER}"
+    mongo_cmd --host localhost ${MONGODB_DATABASE} \
+    <<<"quit(db.createUser(${user}))"
+  else 
+    log "App user already exists. Skipping."
+  fi
+}
+
+initalize_mongo_if_required() {
+
+  add_root_user_if_required
+  add_app_user_if_required
+
+  for f in /docker-entrypoint-initdb.d/*; do
+    case "$f" in
+      *.sh) log "$0: running $f"; . "$f" ;;
+      # *.js) echo "$0: running $f"; "${mongo[@]}" "$MONGO_INITDB_DATABASE" "$f"; echo ;;
+      *)    log "$0: ignoring $f" ;;
+    esac
+    echo
+  done
+}
+
+# Usage
+usage() {
+  cat <<-EOF
+  You must specify the following environment variables:
+  MONGODB_ADMIN_PASSWORD
+
+  Replication is enabled by default and cannot be turned
+  down, so you must also provide he following environment
+  variables:
+  MONGODB_KEYFILE_VALUE
+  MONGODB_REPLICA_NAME
+
+  It is **highly recommended** you provide the following
+  variables for an application user with the `readWrite` role.
+  Specify all three or none, you cannot do some of them:
+  MONGODB_USER
+  MONGODB_PASSWORD
+  MONGODB_DATABASE
+
+EOF
+exit
+}
+
+if [ -z "${MONGODB_ADMIN_PASSWORD}" ] || 
+   [ -z "${MONGODB_KEYFILE_VALUE}" ] ||
+   [ -z "${MONGODB_REPLICA_NAME}" ]; then
+  echo -e \\n"Missing parameters !!!"\\n
+  usage
+fi
+
+#
+# Do the real work
+#
+
+# Generate the keyfile used for securing the replicaset.
+log "Generating the keyfile for replication."
+gen_key_file
+
+# Start mongodb on the localhost interface so that the
+# admin password can be set.
+start_mongod_local
+wait_for_mongo_up
+
+initalize_mongo_if_required
+
+# Stop mongodb.
+stop_mongod
+wait_for_mongo_down
+
+# Start mongodb on all interfaces with the replica set
+# enabled.
+log "Starting the server for replication"
+start_mongod
+wait_for_mongo_up
+
+# Initialize replica set
+if [ "${MEMBER_ID}" = '0' ]; then
+  # Only the first host should configure the
+  # replicat set.
+  log "Initializing the replica set." 
+  init_replicat_set "${FQ_HOST_NAME}"
+else
+  # Others should just join the replica set.
+  log "Joining the replica set." 
+  add_member_to_replicat_set "${FQ_HOST_NAME}"
+fi
+
+touch /tmp/initialized
+
+log "mongoDB is initalized and ready for action"
+
+trap 'stop_mongod' SIGINT SIGTERM
+
+wait $(pgrep --parent 1 mongod) && echo "Goodbye!"
