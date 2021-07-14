@@ -287,6 +287,8 @@ log "Starting the server for replication"
 start_mongod
 wait_for_mongo_up
 
+touch /tmp/initialized
+
 # Initialize replica set
 if [ "${MEMBER_ID}" = '0' ]; then
   # Only the first host should configure the
@@ -298,8 +300,6 @@ else
   log "Joining the replica set." 
   add_member_to_replicat_set "${FQ_HOST_NAME}"
 fi
-
-touch /tmp/initialized
 
 log "mongoDB is initalized and ready for action"
 
