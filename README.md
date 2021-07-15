@@ -106,3 +106,5 @@ mongo --quiet --host 127.0.0.1 --port 27017 -u $MONGO_INITDB_ROOT_USERNAME -p $M
 ```
 
 - Look into if, as a best practice, nodes are removed from a replica set on shutdown.
+
+- Add mongo-shell to the image and use that to setup and configure the hosts: https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz
