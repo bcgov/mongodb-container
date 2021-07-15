@@ -30,6 +30,7 @@ COPY ./rhsm-ca /etc/rhsm/ca
 
 COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 
+# https://repo.mongodb.org/yum/redhat/8/mongodb-org/
 # mongodb-org package will install:
 #   1. mongodb-org-server – MongoDB daemon mongod
 #   2. mongodb-org-mongos – MongoDB Shard daemon
@@ -55,6 +56,13 @@ COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms
 COPY scripts/run-mongod /opt/bin/run-mongod
 COPY mongod.conf /etc/mongod.conf
+
+# Install mongosh. Not available as a RPM in this
+# repo version so we get it the hard way.
+RUN curl -sL https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz | \
+    tar -Jx && \
+    mv mongosh-1.0.0-linux-x64/bin/* /usr/bin/ && \
+    rm -rf mongosh-1.0.0-linux-x64
 
 # Containter setup
 RUN mkdir -p ${HOME}/data \
