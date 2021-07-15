@@ -28,6 +28,9 @@ data/
 .env.test.local
 .env.production.local
 *.pem
+etc-pki-entitlement.yaml
+rhsm-ca.yaml
+rhsm-conf.yaml
 
 # Logs
 logs

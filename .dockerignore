@@ -1,2 +1,10 @@
 data
+openshift
+devops
 .env
+etc-pki-entitlement.yaml
+rhsm-ca.yaml
+rhsm-conf.yaml
+CONTRIBUTING.md
+README.md
+LICENSE
