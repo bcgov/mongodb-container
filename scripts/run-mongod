@@ -24,7 +24,10 @@ readonly KEY_FILE=/var/lib/mongodb/keyfile
 readonly MAX_ATTEMPTS=60
 readonly SLEEP_TIME=1
 readonly ROOT_AUTH_DB='admin'
-
+# Favour the first member of the `StatefulSet` to be the
+# PRIMARY. This tends to make scaling up and down pods
+# a bit smoother.
+readonly FIRST_MEMBER_PRIORITY=1.1
 # Fully Qualifed Nost Name
 # ie. mongodb-0.mongodb-internal.6e2f11-prod.svc.cluster.local
 readonly FQ_HOST_NAME="$(hostname -f)"
@@ -120,7 +123,7 @@ _wait_for_mongo() {
 
 init_replicat_set() {
   local host_to_add="$1"
-  local config="{_id: '${MONGODB_REPLICA_NAME}', members: [{_id: 0, host: '${host_to_add}'}]}"
+  local config="{_id: '${MONGODB_REPLICA_NAME}', members: [{_id: 0, host: '${host_to_add}', priority: ${FIRST_MEMBER_PRIORITY}}]}"
 
   # Initalize the replica set
   log "Configuring replica set"
