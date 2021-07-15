@@ -67,7 +67,7 @@ objects:
           imageOptimizationPolicy: SkipLayers
           from:
             kind: DockerImage
-            name: registry.access.redhat.com/rhel8:latest
+            name: registry.access.redhat.com/ubi8/ubi:latest
         type: Docker
       triggers:
         - type: ConfigChange
