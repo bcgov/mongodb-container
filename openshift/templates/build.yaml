@@ -23,7 +23,7 @@ labels:
 parameters:
   - name: VERSION
     description: Ouput version
-    value: "3.6-latest"
+    value: "3.6-beta"
   - name: GIT_URI
     value: "https://github.com/bcgov/mongodb-replicaset-container.git"
   - name: GIT_REF

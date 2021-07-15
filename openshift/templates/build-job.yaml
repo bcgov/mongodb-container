@@ -16,7 +16,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: build-job
+  name: build-mongodb-job
 spec:
   schedule: "14 4 * * 4" # prod
   concurrencyPolicy: Forbid
