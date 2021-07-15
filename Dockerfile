@@ -49,7 +49,7 @@ RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
     rm -rf /var/cache/yum
 
 # Increment this to trigger a rebuild from this layer onwards.
-ENV IMG_BUILD_VERSION=7
+ENV IMG_BUILD_VERSION=9
 
 COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms

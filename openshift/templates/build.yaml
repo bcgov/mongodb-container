@@ -48,14 +48,14 @@ objects:
       source:
         secrets:
         - secret:
-            name: platform-services-controlled-etc-pki-entitlement
+            name: etc-pki-entitlement
           destinationDir: etc-pki-entitlement
         configMaps:
         - configMap:
-            name: platform-services-controlled-rhsm-conf
+            name: rhsm-conf
           destinationDir: rhsm-conf
         - configMap:
-            name: platform-services-controlled-rhsm-ca
+            name: rhsm-ca
           destinationDir: rhsm-ca
         contextDir: /
         git:
