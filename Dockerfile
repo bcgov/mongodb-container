@@ -38,7 +38,7 @@ COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 #   4. mongodb-org-tools – Tools (dump, restore, etc)
 
 # Package setup
-RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
+RUN INSTALL_PKGS="numactl rsync jq xz hostname procps mongodb-org" && \
     rm /etc/rhsm-host && \
     yum repolist --disablerepo=* && \
     add-mongodb-repo && \
