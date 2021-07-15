@@ -38,7 +38,7 @@ COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 #   4. mongodb-org-tools – Tools (dump, restore, etc)
 
 # Package setup
-RUN INSTALL_PKGS="numactl rsync jq xz hostname procps mongodb-org" && \
+RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
     rm /etc/rhsm-host && \
     yum repolist --disablerepo=* && \
     add-mongodb-repo && \
@@ -60,7 +60,7 @@ COPY mongod.conf /etc/mongod.conf
 # Install mongosh. Not available as a RPM in this
 # repo version so we get it the hard way.
 RUN curl -sL https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz | \
-    tar -Jx && \
+    tar -zx && \
     mv mongosh-1.0.0-linux-x64/bin/* /usr/bin/ && \
     rm -rf mongosh-1.0.0-linux-x64
 
