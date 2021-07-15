@@ -32,7 +32,7 @@ objects:
   - apiVersion: v1
     kind: ImageStream
     metadata:
-      name: mongodb-repset
+      name: mongodb-ha
     spec:
       lookupPolicy:
         local: false
@@ -44,7 +44,7 @@ objects:
       output:
         to:
           kind: ImageStreamTag
-          name: "mongodb-repset:${VERSION}"
+          name: "mongodb-ha:${VERSION}"
       source:
         secrets:
         - secret:
