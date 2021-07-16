@@ -43,6 +43,10 @@ mongo_cmd() {
   mongo --quiet $@;
 }
 
+mongosh_cmd() {
+  mongosh $@;
+}
+
 # generate keyfile
 gen_key_file() {
   echo ${MONGODB_KEYFILE_VALUE} >>${KEY_FILE}
@@ -121,10 +125,10 @@ run_replicat_set_mgmt() {
     mongo_host=${MONGODB_SERVICE_NAME}
   fi
 
-  log "Configuring replica set on $mongo_host"
+  log "Configuring replica set at $mongo_host"
 
   HOST_NAME=$host_to_add \
-  mongosh \
+  mongosh_cmd \
   --host ${mongo_host} \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
@@ -133,13 +137,18 @@ run_replicat_set_mgmt() {
 
 initalize_mongo_if_required() {
 
-  mongosh --host localhost \
+  mongosh_cmd --host localhost \
   -f /opt/scripts/add_users.js
 
   for f in /docker-entrypoint-initdb.d/*; do
     case "$f" in
       *.sh) log "$0: running $f"; . "$f" ;;
-      # *.js) echo "$0: running $f"; "${mongo[@]}" "$MONGO_INITDB_DATABASE" "$f"; echo ;;
+      *.js) log "$0: running $f"; 
+            mongosh_cmd \
+            --host ${mongo_host} \
+            -u ${MONGODB_ADMIN_USERNAME} \
+            -p ${MONGODB_ADMIN_PASSWORD} \
+            -f "$f"; echo ;;
       *)    log "$0: ignoring $f" ;;
     esac
     echo
@@ -172,7 +181,7 @@ exit
 if [ -z "${MONGODB_ADMIN_PASSWORD}" ] || 
    [ -z "${MONGODB_KEYFILE_VALUE}" ] ||
    [ -z "${MONGODB_REPLICA_NAME}" ]; then
-  echo -e \\n"Missing parameters !!!"\\n
+  echo -e \\n"Missing key parameters !!!"\\n
   usage
 fi
 
