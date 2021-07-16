@@ -14,21 +14,23 @@
 //
 
 const firstMemberPriority = 1.1;
-const [ hostName ] = process.env('FQ_HOST_NAME').split('.');
+const [ hostName ] = process.env.FQ_HOST_NAME.split('.');
 const hostID = hostName.split('-').pop();
+const codeNotYetInitialized = 94;
 
 const log = (message) => {
   console.log(`INFO : ${message}`);
 }
-const initReplicaSet = () => {
+
+const initReplicaSet = (firstMemberID, firstMemberName) => {
 
   log('Initalizing replica set.');
 
   const rsConfig = {
-    _id: hostID,
+    _id: firstMemberID,
     members: [{
-      _id: hostID,
-      host: hostName
+      _id: firstMemberID,
+      host: firstMemberName
     }]
   };
 
@@ -51,16 +53,30 @@ const bumpMemberZeroPriority = () => {
   rs.reconfig(config);
 }
 
+const addMemberToReplicaSet = (host) => {
+
+  const memberExists = rs.status().members.filter(m => m.name.split(':')[0] === host).length === 0;
+  if (memberExists) {
+    log(`Member ${host} exists. Skipping.`);
+    return;
+  }
+
+  log(`Adding ${host} to replica set`);
+  rs.add(host);
+}
+
 const rsStatus = rs.status();
 
-if (typeof rsStatus.code != 'undefined' && rsStatus.code === 94) { // NotYetInitialized
+if (typeof rsStatus.code != 'undefined' && rsStatus.code === codeNotYetInitialized) {
 
   log("Detected uninitialized replica set");
 
-  initReplicaSet();
+  initReplicaSet(hostID, hostName);
   bumpMemberZeroPriority();
+
+  process.exit(0);
 }
 
+addMemberToReplicaSet(hostName);
 
-
-
+process.exit(0);

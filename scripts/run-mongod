@@ -126,7 +126,7 @@ init_replicat_set() {
   mongosh --host localhost \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
-  -f /opt/bin/init_replicat_set.js
+  -f /opt/bin/config_replicat_set.js
 }
 
 add_member_to_replicat_set() {
@@ -146,12 +146,11 @@ add_member_to_replicat_set() {
     mongo_host="${primary}"
   fi
 
-  mongo_cmd --host ${mongo_host} \
+  FQ_HOST_NAME=${host_to_add} \
+  mongosh --host ${mongo_host} \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
-  <<< "quit(rs.add('${host_to_add}').ok)"
-
-  log "Successfully joined replica set"
+  -f /opt/bin/config_replicat_set.js
 }
 
 remove_member_from_replicat_set() {
