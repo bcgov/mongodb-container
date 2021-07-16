@@ -13,12 +13,13 @@
 // limitations under the License.
 //
 
+const adminDB = 'admin';
 const rootUser = {
   user: process.env.MONGODB_ADMIN_USERNAME,
   pwd: process.env.MONGODB_ADMIN_PASSWORD,
   roles: [{
     role: 'root',
-    db: 'admin'
+    db: adminDB
   },
   ]
 };
@@ -40,8 +41,8 @@ const main = () => {
 
   log("Adding initial db users if required.");
 
-  mydb = conn.getDB('admin');
-  if (!conn.getDB('admin').getUser(process.env.MONGODB_ADMIN_USERNAME)) {
+  mydb = conn.getDB(adminDB);
+  if (!mydb.getUser(process.env.MONGODB_ADMIN_USERNAME)) {
     log("Adding admin user.");
     mydb.createUser(rootUser);
   } else {

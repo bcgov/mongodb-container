@@ -58,11 +58,11 @@ const initReplicaSet = (replicaSetName, memberID, memberName) => {
 }
 
 // When started as a `StatefulSet` on k8s its better to have
-// the first stateful set member be the primary because its
+// the first stateful set member be the PRIMARY because its
 // first to start, and last to shut down.
 const bumpFirstMemberZeroPriority = () => {
 
-  log('Bumping first member priority.');
+  log('Checking member priority.');
 
   let config = rs.config();
   for (const m in config.members) {
@@ -75,11 +75,14 @@ const bumpFirstMemberZeroPriority = () => {
         return;
       }
 
+      // Bump the member priority so the PRIMARY role
+      // gravitates towards it.
+      log('Bumping first member priority.');
+      
       config.members[m].priority = firstMemberPriority;
+      rs.reconfig(config);
     }
   }
-  
-  rs.reconfig(config);
 }
 
 const addMemberToReplicaSet = (host) => {
@@ -102,7 +105,7 @@ const main = () => {
   log('Running management script.');
 
   try {
-    rs.status();
+    rs.status(); // TODO:(jl) Probably a better way to do this.
     addMemberToReplicaSet(fullHostName);
   } catch (e) {
     if (e.code === codeNotYetInitialized) {
