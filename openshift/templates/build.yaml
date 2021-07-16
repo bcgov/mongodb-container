@@ -41,6 +41,13 @@ objects:
     metadata:
       name: mongodb-image
     spec:
+      resources:
+        limits:
+          cpu: '2'
+          memory: 2G
+        requests:
+          cpu: '1'
+          memory: 1G
       output:
         to:
           kind: ImageStreamTag

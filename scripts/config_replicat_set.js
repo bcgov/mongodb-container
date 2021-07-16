@@ -16,7 +16,8 @@
 const firstMemberPriority = 1.1;
 const firstMemberID = 0;
 const codeNotYetInitialized = 94;
-const fullHostName = process.env.FQ_HOST_NAME;
+const fullHostName = process.env.HOST_NAME;
+const replicaSetName = process.env.MONGODB_REPLICA_NAME;
 
 if (typeof fullHostName === 'undefined' || fullHostName === "") {
   print("ERROR : You must define the environment variable FQ_HOST_NAME");
@@ -31,10 +32,10 @@ const log = (message) => {
 // Initialize the replica set with the first member,
 // assign `_id` 0 to match the first `StatefulSet` member
 // ID.
-const initReplicaSet = (memberID, memberName) => {
+const initReplicaSet = (replicaSetName, memberID, memberName) => {
 
   const rsConfig = {
-    _id: memberID,
+    _id: replicaSetName,
     members: [{
       _id: memberID,
       host: memberName
@@ -48,8 +49,12 @@ const initReplicaSet = (memberID, memberName) => {
   log('Waiting for PRIMARY ...');
 
   while (!rs.isMaster().ismaster) { 
+    log('Waiting ...');
+
     sleep(100); 
   }
+
+  log('PRIMARY on-line. Moving on.');
 }
 
 // When started as a `StatefulSet` on k8s its better to have
@@ -64,7 +69,7 @@ const bumpFirstMemberZeroPriority = () => {
     // The first `StatefulSet` member would be `*-0` and
     // we added it with `_id` 0.
     if (config.members[m]._id === firstMemberID) {
-      if (config.members[m].priority = firstMemberPriority) {
+      if (config.members[m].priority === firstMemberPriority) {
         log(`First member priority already ${firstMemberPriority}. Skipping.`);
         
         return;
@@ -96,15 +101,15 @@ const main = () => {
 
   log('Running management script.');
 
-  const rsStatus = rs.status();
-  if (typeof rsStatus.code != 'undefined' && rsStatus.code === codeNotYetInitialized) {
-    initReplicaSet(firstMemberID, fullHostName);
+  try {
+    rs.status();
+    addMemberToReplicaSet(fullHostName);
+  } catch (e) {
+    if (e.code === codeNotYetInitialized) {
+      initReplicaSet(replicaSetName, firstMemberID, fullHostName);
+      bumpFirstMemberZeroPriority(); 
+    }
   }
-
-  // This is done here in case the replica set has not been 
-  // configured properly.
-  bumpFirstMemberZeroPriority(); 
-  addMemberToReplicaSet(fullHostName);
 
   log('Done.');
 }

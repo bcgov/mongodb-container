@@ -1,12 +1,24 @@
-
-const authDB = 'admin';
+// Copyright 2021 The Province of British Columbia
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 const rootUser = {
   user: process.env.MONGODB_ADMIN_USERNAME,
   pwd: process.env.MONGODB_ADMIN_PASSWORD,
   roles: [{
     role: 'root',
-    db: authDB
+    db: 'admin'
   },
   ]
 };
@@ -23,16 +35,23 @@ const log = (message) => {
 
 const main = () => {
 
-  if (db.system.users.count({ user: process.env.MONGODB_ADMIN_USERNAME }) > 0) {
-    log("Adding admin user exists.");
-    db.createUser(rootUser);
+  const conn = Mongo();
+  let mydb;
+
+  log("Adding initial db users if required.");
+
+  mydb = conn.getDB('admin');
+  if (!conn.getDB('admin').getUser(process.env.MONGODB_ADMIN_USERNAME)) {
+    log("Adding admin user.");
+    mydb.createUser(rootUser);
   } else {
     log("Admin user already exists. Skipping.");
   }
 
-  if (db.system.users.count({ user: process.env.MONGODB_USER }) > 0) {
+  mydb = conn.getDB(process.env.MONGODB_DATABASE);
+  if (!mydb.getUser(process.env.MONGODB_USER)) {
     log("Adding application user.");
-    db.createUser(appUser);
+    mydb.createUser(appUser);
   } else {
     log("Application user already exists. Skipping.");
   }

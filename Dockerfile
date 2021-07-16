@@ -49,13 +49,12 @@ RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
     yum clean all -y && \
     rm -rf /var/cache/yum
 
-# Increment this to trigger a rebuild from this layer onwards.
-ENV IMG_BUILD_VERSION=9
+RUN mkdir -p /opt/bin/ /opt/scripts/ 
 
 COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms
 COPY scripts/run-mongod /opt/bin/run-mongod
-COPY scripts/*.js /opt/bin
+COPY scripts/*.js /opt/scripts/
 COPY mongod.conf /etc/mongod.conf
 
 # Install mongosh. Not available as a RPM in this

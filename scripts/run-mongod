@@ -27,12 +27,6 @@ readonly ROOT_AUTH_DB='admin'
 # Fully Qualifed Nost Name
 # ie. mongodb-0.mongodb-internal.6e2f11-prod.svc.cluster.local
 readonly FQ_HOST_NAME="$(hostname -f)"
-# Short Host Name
-# ie. mongodb-0
-readonly HOST_NAME="$(hostname)"
-# Member ID
-# ie. 0
-readonly MEMBER_ID="${HOST_NAME##*-}"
 
 #
 # funcitons
@@ -119,47 +113,28 @@ _wait_for_mongo() {
 
 run_replicat_set_mgmt() {
   local host_to_add="$1"
+  local host_name=${FQ_HOST_NAME%%.*}
+  local host_id=${host_name##*-}
+  local mongo_host='localhost'
 
-  log "Configuring replica set"
-  FQ_HOST_NAME=${host_to_add} \
-  mongosh --host localhost \
+  if [ $host_id -gt 0 ]; then
+    mongo_host=${MONGODB_SERVICE_NAME}
+  fi
+
+  log "Configuring replica set on $mongo_host"
+
+  HOST_NAME=$host_to_add \
+  mongosh \
+  --host ${mongo_host} \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
-  -f /opt/bin/config_replicat_set.js
+  -f /opt/scripts/config_replicat_set.js
 }
-
-# add_root_user_if_required() {
-#   local user="{user: '${MONGODB_ADMIN_USERNAME}', pwd: '${MONGODB_ADMIN_PASSWORD}', roles: [ { role: 'root', db: '${ROOT_AUTH_DB}' } ]}"
-#   local haz_admin=$(mongo_cmd --host localhost ${ROOT_AUTH_DB} <<< "db.system.users.count({user:'${MONGODB_ADMIN_USERNAME}'})")
-  
-#   if [ $haz_admin -eq 0 ]; then
-#     # Initalize the replica set
-#     log "Adding admin user ${MONGODB_ADMIN_USERNAME}"
-#     mongo_cmd --host localhost ${ROOT_AUTH_DB} \
-#     <<<"quit(db.createUser(${user}))"
-#   else 
-#     log "Admin already exists. Skipping."
-#   fi
-# }
-
-# add_app_user_if_required() {
-#   local user="{user: '${MONGODB_USER}', pwd: '${MONGODB_PASSWORD}', roles: [ { role: 'dbOwner', db: '${MONGODB_DATABASE}' } ]}"
-#   local haz_user=$(mongo_cmd --host localhost ${ROOT_AUTH_DB} <<< "db.system.users.count({user:'${MONGODB_USER}'})")
-  
-#   if [ $haz_user -eq 0 ]; then
-#     # Initalize the replica set
-#     log "Adding app user ${MONGODB_USER}"
-#     mongo_cmd --host localhost ${MONGODB_DATABASE} \
-#     <<<"quit(db.createUser(${user}))"
-#   else 
-#     log "App user already exists. Skipping."
-#   fi
-# }
 
 initalize_mongo_if_required() {
 
   mongosh --host localhost \
-  -f /opt/bin/add_users.js
+  -f /opt/scripts/add_users.js
 
   for f in /docker-entrypoint-initdb.d/*; do
     case "$f" in
