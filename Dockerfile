@@ -55,6 +55,7 @@ ENV IMG_BUILD_VERSION=9
 COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms
 COPY scripts/run-mongod /opt/bin/run-mongod
+COPY scripts/*.js /opt/bin
 COPY mongod.conf /etc/mongod.conf
 
 # Install mongosh. Not available as a RPM in this
