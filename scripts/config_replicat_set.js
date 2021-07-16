@@ -14,25 +14,34 @@
 //
 
 const firstMemberPriority = 1.1;
-const [ hostName ] = process.env.FQ_HOST_NAME.split('.');
-const hostID = hostName.split('-').pop();
+const firstMemberID = 0;
 const codeNotYetInitialized = 94;
+const fullHostName = process.env.FQ_HOST_NAME;
 
-const log = (message) => {
-  console.log(`INFO : ${message}`);
+if (typeof fullHostName === 'undefined' || fullHostName === "") {
+  print("ERROR : You must define the environment variable FQ_HOST_NAME");
+
+  process.exit(1);
 }
 
-const initReplicaSet = (firstMemberID, firstMemberName) => {
+const log = (message) => {
+  print(`INFO : ${message}`);
+}
 
-  log('Initalizing replica set.');
+// Initialize the replica set with the first member,
+// assign `_id` 0 to match the first `StatefulSet` member
+// ID.
+const initReplicaSet = (memberID, memberName) => {
 
   const rsConfig = {
-    _id: firstMemberID,
+    _id: memberID,
     members: [{
-      _id: firstMemberID,
-      host: firstMemberName
+      _id: memberID,
+      host: memberName
     }]
   };
+
+  print('Initalizing replica set.');
 
   rs.initiate(rsConfig);
 
@@ -43,40 +52,63 @@ const initReplicaSet = (firstMemberID, firstMemberName) => {
   }
 }
 
-const bumpMemberZeroPriority = () => {
+// When started as a `StatefulSet` on k8s its better to have
+// the first stateful set member be the primary because its
+// first to start, and last to shut down.
+const bumpFirstMemberZeroPriority = () => {
 
   log('Bumping first member priority.');
 
   let config = rs.config();
-  config.members[0].priority = firstMemberPriority;
+  for (const m in config.members) {
+    // The first `StatefulSet` member would be `*-0` and
+    // we added it with `_id` 0.
+    if (config.members[m]._id === firstMemberID) {
+      if (config.members[m].priority = firstMemberPriority) {
+        log(`First member priority already ${firstMemberPriority}. Skipping.`);
+        
+        return;
+      }
+
+      config.members[m].priority = firstMemberPriority;
+    }
+  }
   
   rs.reconfig(config);
 }
 
 const addMemberToReplicaSet = (host) => {
 
-  const memberExists = rs.status().members.filter(m => m.name.split(':')[0] === host).length === 0;
+  const [ shortName ] = host.split('.');
+  const memberExists = rs.config().members.filter(m => m.host.split(':')[0] === host).length > 0;
+
   if (memberExists) {
-    log(`Member ${host} exists. Skipping.`);
+    log(`Member ${shortName} exists. Skipping.`);
+    
     return;
   }
 
-  log(`Adding ${host} to replica set`);
+  log(`Adding ${shortName} to replica set`);
   rs.add(host);
 }
 
-const rsStatus = rs.status();
+const main = () => {
 
-if (typeof rsStatus.code != 'undefined' && rsStatus.code === codeNotYetInitialized) {
+  log('Running management script.');
 
-  log("Detected uninitialized replica set");
+  const rsStatus = rs.status();
+  if (typeof rsStatus.code != 'undefined' && rsStatus.code === codeNotYetInitialized) {
+    initReplicaSet(firstMemberID, fullHostName);
+  }
 
-  initReplicaSet(hostID, hostName);
-  bumpMemberZeroPriority();
+  // This is done here in case the replica set has not been 
+  // configured properly.
+  bumpFirstMemberZeroPriority(); 
+  addMemberToReplicaSet(fullHostName);
 
-  process.exit(0);
+  log('Done.');
 }
 
-addMemberToReplicaSet(hostName);
+main();
 
 process.exit(0);

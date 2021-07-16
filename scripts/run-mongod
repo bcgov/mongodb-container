@@ -117,65 +117,15 @@ _wait_for_mongo() {
   return 1
 }
 
-init_replicat_set() {
+run_replicat_set_mgmt() {
   local host_to_add="$1"
 
-  # Initalize the replica set
   log "Configuring replica set"
   FQ_HOST_NAME=${host_to_add} \
   mongosh --host localhost \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
   -f /opt/bin/config_replicat_set.js
-}
-
-add_member_to_replicat_set() {
-  local host_to_add="$1"
-  local mongo_host="${MONGODB_SERVICE_NAME}"
-
-  log "Adding ${host_to_add} to replica set ..."
-
-  # All the `rs.*` commands need to be run on the
-  # PRIMARY. Lookup the PRIMARY and use that to
-  # add additional hosts.
-
-  local primary=$(mongo_cmd --host ${MONGODB_SERVICE_NAME} -u ${MONGODB_ADMIN_USERNAME} -p ${MONGODB_ADMIN_PASSWORD} <<< "JSON.stringify(rs.status())" | jq -r '.members[] | select(.stateStr == "PRIMARY") | .name')
-  
-  if ! [ -z "${primary}" ]; then
-    log "Found PRIMARY ${mongo_host}"
-    mongo_host="${primary}"
-  fi
-
-  FQ_HOST_NAME=${host_to_add} \
-  mongosh --host ${mongo_host} \
-  -u ${MONGODB_ADMIN_USERNAME} \
-  -p ${MONGODB_ADMIN_PASSWORD} \
-  -f /opt/bin/config_replicat_set.js
-}
-
-remove_member_from_replicat_set() {
-  local host_to_remove="$1"
-  local mongo_host="${MONGODB_SERVICE_NAME}"
-
-  log "Removing ${host_to_remove} from replica set ..."
-
-  # All the `rs.*` commands need to be run on the
-  # PRIMARY. Lookup the PRIMARY and use that to
-  # add additional hosts.
-
-  local primary=$(mongo_cmd --host ${MONGODB_SERVICE_NAME} -u ${MONGODB_ADMIN_USERNAME} -p ${MONGODB_ADMIN_PASSWORD} <<< "JSON.stringify(rs.status())" | jq -r '.members[] | select(.stateStr == "PRIMARY") | .name')
-  
-  if ! [ -z "${primary}" ]; then
-    log "Found PRIMARY ${mongo_host}"
-    mongo_host="${primary}"
-  fi
-
-  mongo_cmd --host ${mongo_host} \
-  -u ${MONGODB_ADMIN_USERNAME} \
-  -p ${MONGODB_ADMIN_PASSWORD} \
-  <<< "quit(rs.remove('${host_to_remove}').ok)"
-
-  log "Successfully removed from replica set"
 }
 
 add_root_user_if_required() {
@@ -278,17 +228,7 @@ wait_for_mongo_up
 
 touch /tmp/initialized
 
-# Initialize replica set
-if [ "${MEMBER_ID}" = '0' ]; then
-  # Only the first host should configure the
-  # replicat set.
-  log "Initializing the replica set." 
-  init_replicat_set "${FQ_HOST_NAME}"
-else
-  # Others should just join the replica set.
-  log "Joining the replica set." 
-  add_member_to_replicat_set "${FQ_HOST_NAME}"
-fi
+run_replicat_set_mgmt "${FQ_HOST_NAME}"
 
 log "mongoDB is initalized and ready for action"
 
