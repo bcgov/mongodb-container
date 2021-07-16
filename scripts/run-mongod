@@ -119,23 +119,14 @@ _wait_for_mongo() {
 
 init_replicat_set() {
   local host_to_add="$1"
-  local config="{_id: '${MONGODB_REPLICA_NAME}', members: [{_id: 0, host: '${host_to_add}'}]}"
 
   # Initalize the replica set
   log "Configuring replica set"
-  mongo_cmd --host localhost \
+  FQ_HOST_NAME=${host_to_add} \
+  mongosh --host localhost \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
-  <<<"quit(rs.initiate(${config}).ok)"
-
-  # Wait for PRIMARY
-  log "Waiting for PRIMARY"
-  mongo_cmd --host localhost \
-  -u ${MONGODB_ADMIN_USERNAME} \
-  -p ${MONGODB_ADMIN_PASSWORD} \
-  <<<"while (!rs.isMaster().ismaster) { sleep(100); }"
-
-  log "PRIMARY is now on-line"
+  -f /opt/bin/init_replicat_set.js
 }
 
 add_member_to_replicat_set() {
