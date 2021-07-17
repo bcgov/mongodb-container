@@ -50,7 +50,7 @@ mongosh_cmd() {
 # generate keyfile
 gen_key_file() {
   echo ${MONGODB_KEYFILE_VALUE} >>${KEY_FILE}
-  chmod 600 ${KEY_FILE}
+  chmod 400 ${KEY_FILE}
 }
 
 start_mongod() {
@@ -140,8 +140,6 @@ run_replicat_set_mgmt() {
 run_js_script() {
   local file_name="$1"
 
-  log "Running script ${file_name}."
-
   mongosh_cmd \
   --host localhost \
   -u ${MONGODB_ADMIN_USERNAME} \
@@ -149,11 +147,11 @@ run_js_script() {
   -f ${file_name}
 }
 
-initalize_mongo_if_required() {
+run_scripts_on_startup() {
 
   for f in /docker-entrypoint-initdb.d/*; do
     case "$f" in
-      # *.sh) log "$0: running $f"; . "$f" ;;
+      *.sh) log "$0: running $f"; . "$f" ;;
       *.js) log "$0: running $f"; run_js_script "$f"; echo ;;
       *)    log "$0: ignoring $f" ;;
     esac
@@ -172,6 +170,9 @@ usage() {
   variables:
   MONGODB_KEYFILE_VALUE
   MONGODB_REPLICA_NAME
+
+  Protip: Generate a keyfile value with:
+  `openssl rand -base64 756`
 
   It is **highly recommended** you provide the following
   variables for an application user with the `readWrite` role.
@@ -204,7 +205,7 @@ gen_key_file
 start_mongod_local
 wait_for_mongo_up
 
-initalize_mongo_if_required
+run_scripts_on_startup
 
 # Stop mongodb.
 stop_mongod
