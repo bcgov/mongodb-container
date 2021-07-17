@@ -54,6 +54,7 @@ RUN mkdir -p /opt/bin/ /opt/scripts/
 COPY scripts/container-entrypoint /usr/bin/container-entrypoint
 COPY scripts/fix-perms /usr/bin/fix-perms
 COPY scripts/run-mongod /opt/bin/run-mongod
+COPY scripts/add_users.js /docker-entrypoint-initdb.d/
 COPY scripts/*.js /opt/scripts/
 COPY mongod.conf /etc/mongod.conf
 
