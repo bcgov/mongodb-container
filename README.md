@@ -46,11 +46,53 @@ Included in this repo is a `CronJob`. Use it to periodically rebuild the image s
 
 ## Run
 
-WIP....
+This image will always start as a replica set. In your **dev** environment just spin up a single pod; in **test** you can one or two; and in **prod** run three pods. If you want nothing to do with a replica set run the official mongoDB images.
+
+This is a drop-in replacement for the now deprecated RedHat mongoDB image. It will need the following environment variables set:
+
+| NAME                    | DESCRIPTION |
+| :---------------------: |
+| MONGODB_ADMIN_PASSWORD  | mongoDB `admin` user password.
+| MONGODB_KEYFILE_VALUE   | keyfile value used for replica authentication. |
+| MONGODB_REPLICA_NAME    | The name of the replica set. Use `rs0` if you're not sure what to do. |
+| MONGODB_USER            | The user your **application** will use to access the database. |
+| MONGODB_PASSWORD        | Password for the application user. |
+| MONGODB_DATABASE        | The name of the application database; this is where the `MONGODB_USER` will live. |
+
+Make things easy on yourself and just add all of these to a `kind: Secret` named `mongodb-creds` like this:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: my-cool-app
+  name: mongodb-creds
+type: Opaque
+data:
+  MONGODB_ADMIN_PASSWORD: d29ybGQ0Mgo=
+  MONGODB_ADMIN_USERNAME: d29ybGQK
+  MONGODB_PASSWORD: aGVsbG8K
+  MONGODB_USER: d29ybGQ0Mgo=
+  MONGODB_KEYFILE_VALUE: Y2FrZTEyMwo=
+  MONGODB_DATABASE: dHVya2V5Cg==
+  MONGODB_REPLICA_NAME: Ymx1ZQo=
+```
+
+Then import them all at once in your deployment like this:
+
+```yaml
+  envFrom: 
+    - secretRef:
+        name: mongodb-creds
+```
+
+**Pro Tip 🤓**
+
+- Generate a keyfile value with the command `openssl rand -base64 756` if you're not sure what to use.
 
 
 ## Get Out of Trouble
-
 
 This is general wisdom to help you run and mange a MongoDB HA replica set.
 
