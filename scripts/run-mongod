@@ -117,14 +117,6 @@ _wait_for_mongo() {
 
 run_replicat_set_mgmt() {
   local host_to_add="$1"
-
-  run_js_script "/opt/scripts/config_replicat_set.js"
-
-  log "Configuring replica set at $mongo_host"
-}
-
-run_js_script() {
-  local file_name="$1"
   local host_name=${FQ_HOST_NAME%%.*}
   local host_id=${host_name##*-}
   local mongo_host='localhost'
@@ -138,6 +130,20 @@ run_js_script() {
   HOST_NAME=$host_to_add \
   mongosh_cmd \
   --host ${mongo_host} \
+  -u ${MONGODB_ADMIN_USERNAME} \
+  -p ${MONGODB_ADMIN_PASSWORD} \
+  -f ${file_name}
+
+  log "Configuring replica set at $mongo_host"
+}
+
+run_js_script() {
+  local file_name="$1"
+
+  log "Running script ${file_name}."
+
+  mongosh_cmd \
+  --host localhost \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
   -f ${file_name}
