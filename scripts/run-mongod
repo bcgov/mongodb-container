@@ -125,14 +125,14 @@ run_replicat_set_mgmt() {
     mongo_host=${MONGODB_SERVICE_NAME}
   fi
 
-  log "Running script ${file_name} agains $mongo_host"
+  log "Configuring replica set via $mongo_host"
 
   HOST_NAME=$host_to_add \
   mongosh_cmd \
   --host ${mongo_host} \
   -u ${MONGODB_ADMIN_USERNAME} \
   -p ${MONGODB_ADMIN_PASSWORD} \
-  -f ${file_name}
+  -f /opt/scripts/config_replicat_set.js
 
   log "Configuring replica set at $mongo_host"
 }
