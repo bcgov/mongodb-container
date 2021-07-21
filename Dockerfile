@@ -45,7 +45,7 @@ RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
     yum update && \
     yum upgrade && \
     subscription-manager repos --enable "rhel-8-for-x86_64-baseos-rpms" && \
-    yes | yum install --setopt=tsflags=nodocs $INSTALL_PKGS && \
+    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
     yum clean all -y && \
     rm -rf /var/cache/yum
 
