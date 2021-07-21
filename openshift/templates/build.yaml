@@ -39,7 +39,7 @@ objects:
   - apiVersion: v1
     kind: BuildConfig
     metadata:
-      name: mongodb-image
+      name: mongodb-36-ha
     spec:
       resources:
         limits:
