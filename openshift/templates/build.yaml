@@ -23,7 +23,7 @@ labels:
 parameters:
   - name: VERSION
     description: Ouput version
-    value: "3.6-beta"
+    value: "1"
   - name: GIT_URI
     value: "https://github.com/bcgov/mongodb-replicaset-container.git"
   - name: GIT_REF
@@ -32,7 +32,7 @@ objects:
   - apiVersion: v1
     kind: ImageStream
     metadata:
-      name: mongodb-ha
+      name: mongodb-36-ha
     spec:
       lookupPolicy:
         local: false
@@ -51,7 +51,7 @@ objects:
       output:
         to:
           kind: ImageStreamTag
-          name: "mongodb-ha:${VERSION}"
+          name: "mongodb-36-ha:${VERSION}"
       source:
         secrets:
         - secret:
