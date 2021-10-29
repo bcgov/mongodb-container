@@ -40,7 +40,6 @@ COPY scripts/add-mongodb-repo /opt/bin/add-mongodb-repo
 # Package setup
 RUN INSTALL_PKGS="numactl rsync jq hostname procps mongodb-org" && \
     rm /etc/rhsm-host && \
-    subscription-manager refresh && \
     yum repolist --disablerepo=* && \
     add-mongodb-repo && \
     yum update && \
