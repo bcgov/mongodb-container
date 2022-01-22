@@ -116,25 +116,23 @@ _wait_for_mongo() {
 }
 
 run_replicat_set_mgmt() {
-  local host_to_add="$1"
-  local host_name=${FQ_HOST_NAME%%.*}
-  local host_id=${host_name##*-}
-  local mongo_host='localhost'
+  local FQDN=$1
+  local SHORT_NAME=${FQDN%%.*}
+  local DOMAIN_NAME=${FQDN#*.}
 
-  if [ $host_id -gt 0 ]; then
-    mongo_host=${MONGODB_SERVICE_NAME}
-  fi
+  # primary node: mongodb-0
+  # secondaries:  mongodb-1+
+  # ------------------------
+  local PRIMARY=mongodb-0.$DOMAIN_NAME
+  local HOST_NAME=$FQDN
 
-  log "Configuring replica set via $mongo_host"
-
-  HOST_NAME=$host_to_add \
-  mongosh_cmd \
-  --host ${mongo_host} \
-  -u ${MONGODB_ADMIN_USERNAME} \
-  -p ${MONGODB_ADMIN_PASSWORD} \
-  -f /opt/scripts/config_replicat_set.js
-
-  log "Configuring replica set at $mongo_host"
+  log "PRIMARY: ${PRIMARY}"
+  log "Doing replica set configuration for $HOST_NAME"
+  HOST_NAME=$HOST_NAME \
+  mongosh_cmd --host $PRIMARY \
+    -u $MONGODB_ADMIN_USERNAME -p $MONGODB_ADMIN_PASSWORD \
+    -f /opt/scripts/config_replicat_set.js
+  log "Done replica set configuration"
 }
 
 # Run a JS startup script. These scripts are run agains the
@@ -228,3 +226,4 @@ log "mongoDB is initalized and ready for action"
 trap 'stop_mongod' SIGINT SIGTERM
 
 wait $(pgrep --parent 1 mongod) && echo "Goodbye!"
+
