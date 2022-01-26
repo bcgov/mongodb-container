@@ -1,37 +1,28 @@
 # TL;DR
 
-This repo is all about a MongoDB 3.6 container to replace the recently deprecated image from RedHat. When started it will want to create a replica set (RS) for high availability (HA); if you don't want HA better to use the [official mongoDB image](https://hub.docker.com/_/mongo/)
+This repo is all about a MongoDB 3.6 container to replace the deprecated image from RedHat. When started, it will want to create a replica set (RS) for high availability (HA); if you don't want HA, better to use the [official mongoDB image](https://hub.docker.com/_/mongo/)
 
 # Introduction
 
 This image was crafted to be a drop-in replacement for the now deprecated [RedHat mongoDB image](registry.redhat.io/rhscl/mongodb-36-rhel7). Unlike the RH image,
 this image will only run in a high availability (HA) configuration. In your dev, test, or stage environment just run with a single member (pod) of the RS. In production, run with a minimum of 3 pods.
 
-This image will run the official mongoDB RPM packages. While they are stable the management scripts for this image (start/stop/management) are fairly new. As such, this image should be considered BETA.
+This image will run the official mongoDB RPM packages. While they are stable, the management scripts for this image (start/stop/management) are fairly new. As such, this image should be considered BETA.
 
 # How To
 
 This section will take you through how to build and run your very own HA mongoDB cluster, and, in the event of an emergency, offer some pro-tips on how to recover. 
 
-Before building your own copy of this image, check the `bcgov` namespace or artifactory to see if it exists in a usable format:
+This image is available from Artifactory:
+https://artifacts.developer.gov.bc.ca/ui/repos/tree/General/plat-common-images%2Fmongodb-36-ha%2F1?projectKey=plat
 
-```console
-oc get is -n bcgov
-```
+If that image does not suit your needs for some reason, you may fork or clone this repo and build your own.
 
-```console
-➜  mongodb-container git:(master) ✗ oc get is -n bcgov
-NAME               IMAGE REPOSITORY                                                     TAGS          UPDATED
-patroni-postgres   image-registry.apps.silver.devops.gov.bc.ca/bcgov/patroni-postgres   12.4-latest   4 weeks ago
-postgres           image-registry.apps.silver.devops.gov.bc.ca/bcgov/postgres           12.4          4 months ago
-mongodb-ha   image-registry.apps.silver.devops.gov.bc.ca/bcgov/mongodb-ha    3.6-latest          2 weeks ago
-```
-
-In the sample above `mongodb-ha` is the `ImageStream` you want.
+This image was previously made available through each cluster's `bcgov` namespace and that will continue to be the case for the time being.
 
 ## Build
 
-To build your own image, run the templates included with this repository against your **tools** namespace:
+If you need to build your own image, run the templates included with this repository against your **tools** namespace:
 
 ```console
 oc process -f openshift/templates/build.yaml| \
@@ -58,6 +49,7 @@ This is a drop-in replacement for the now deprecated RedHat mongoDB image. It wi
 | MONGODB_USER            | The user your **application** will use to access the database. |
 | MONGODB_PASSWORD        | Password for the application user. |
 | MONGODB_DATABASE        | The name of the application database; this is where the `MONGODB_USER` will live. |
+| MONGODB_REPLICA_COUNT   | The number of pods in the replica set. |
 
 Make things easy on yourself and just add all of these to a `kind: Secret` named `mongodb-creds` like this:
 
@@ -77,6 +69,7 @@ data:
   MONGODB_KEYFILE_VALUE: Y2FrZTEyMwo=
   MONGODB_DATABASE: dHVya2V5Cg==
   MONGODB_REPLICA_NAME: Ymx1ZQo=
+  MONGODB_REPLICA_COUNT: 3
 ```
 
 Then import them all at once in your deployment like this:
@@ -108,18 +101,18 @@ Omit the `--host` parameter if you like, it will connect to the mongoDB instance
 
 2. Replica Set Management
 
-Learn about and mage the RS with the `rs` command set:
+Learn about and manage the RS with the `rs` command set:
 
 `rs.status()`
 Use this command to learn about your RS.
 
 `rs.add()`
-Use this command to add a RS member. In general its not required, the container deals with this.
+Use this command to add a RS member. In general, it's not required, the container deals with this.
 
 `rs.remove()`
 This one you may need from time to time. As you suspect, it will remove a member from the RS.
 
-Review the on-line documentation for more commands as needed.
+Review the online documentation for more commands as needed.
 
 3. Shutdown
 
@@ -131,7 +124,7 @@ When the container (pod) needs to shutdown it will also turn down the mongoDB in
 
 Also use this command if a secondary becomes a primary and you don't want that.
 
-- Run `db.adminCommand({shutdown: 1,force: false})` on any member to gracefully shutdown mongoDB.
+- Run `db.adminCommand({shutdown: 1,force: false})` on any member to gracefully shut down mongoDB.
 
 4. Startup
 
@@ -149,4 +142,4 @@ mongo --quiet --host 127.0.0.1 --port 27017 -u $MONGO_INITDB_ROOT_USERNAME -p $M
 
 - Look into if, as a best practice, nodes are removed from a replica set on shutdown.
 
-- Add mongo-shell to the image and use that to setup and configure the hosts: https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz
+- Add mongo-shell to the image and use that to set up and configure the hosts: https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz
