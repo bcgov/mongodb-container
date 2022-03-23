@@ -16,6 +16,7 @@
 const fullHostName = process.env.HOST_NAME;
 const replicaSetName = process.env.MONGODB_REPLICA_NAME;
 const clusterName = process.env.MONGODB_CLUSTER_NAME;
+const mongoPrimary = process.env.MONGODB_PRIMARY;
 
 const log = (message) => {
   print(`REPLICASET-SETUP: ${message}`);
@@ -60,7 +61,7 @@ if (memberExists > 0) {
 //   this node with priority ${primaryPriority} (higher priority)
 // If any other node, add it with priority ${secondaryPriority} (lower priority)
 // -----------------------------------------------------------------------------
-if (shortName === "mongodb-0") {
+if (shortName === mongoPrimary) {
   log("Initializing replica set")
   const rsConfig = { _id: replicaSetName, members: [{ _id: 0, host: replicaHostName, priority: primaryPriority }] }
   try {
