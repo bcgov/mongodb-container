@@ -42,15 +42,9 @@ var nodeID = parseInt(nodeNumber);
 
 // For cross-cluster configuration, get our port from the env var
 var myPort = "27017"
-if (clusterName == 'gold') {
-  if (nodeID == '0') { myPort = process.env.MONGDODB_GOLD_0_PORT; }
-  else if (nodeID == '1') { myPort = process.env.MONGDODB_GOLD_1_PORT; }
-  else if (nodeID == '2') { myPort = process.env.MONGDODB_GOLD_2_PORT; }
-} else if (clusterName == 'golddr') {
-  if (nodeID == '0') { myPort = process.env.MONGDODB_GOLDDR_0_PORT; }
-  else if (nodeID == '1') { myPort = process.env.MONGDODB_GOLDDR_1_PORT; }
-  else if (nodeID == '2') { myPort = process.env.MONGDODB_GOLDDR_2_PORT; }
-}
+if (nodeID == '0') { myPort = process.env.MONGDODB_0_PORT; }
+else if (nodeID == '1') { myPort = process.env.MONGDODB_1_PORT; }
+else if (nodeID == '2') { myPort = process.env.MONGDODB_2_PORT; }
 
 // Set replica member name like: mongodb-0-gold:12345
 var replicaHostName = shortName + "-" + clusterName + ":" + myPort;
