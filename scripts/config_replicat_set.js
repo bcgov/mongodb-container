@@ -73,13 +73,22 @@ if (memberExists > 0) {
   process.exit(0);
 }
 
+// Set replica set node ID
+// -----------------------
+if (clusterName == mongoPrimaryCluster) {
+  rsNodeID = nodeID + 100;
+}
+else {
+  rsNodeID = nodeID + 200;
+}
+
 // If this is the first instance (mongodb-0), initiate the replica set and add
 //   this node with priority ${primaryPriority} (higher priority)
 // If any other node, add it with priority ${secondaryPriority} (lower priority)
 // -----------------------------------------------------------------------------
 if (replicaHostName === mongoPrimary && clusterName == mongoPrimaryCluster) {
   log("Initializing replica set")
-  const rsConfig = { _id: replicaSetName, members: [{ _id: 0, host: replicaHostNameAndPort, priority: primaryPriority }] }
+  const rsConfig = { _id: replicaSetName, members: [{ _id: rsNodeID, host: replicaHostNameAndPort, priority: primaryPriority }] }
   try {
     rs.initiate(rsConfig);
   } catch (e) {
@@ -90,7 +99,7 @@ if (replicaHostName === mongoPrimary && clusterName == mongoPrimaryCluster) {
 }
 else {
   log('Adding member to replica set');
-  const rsAdd = { _id: nodeID, host: replicaHostNameAndPort, priority: secondaryPriority }
+  const rsAdd = { _id: rsNodeID, host: replicaHostNameAndPort, priority: secondaryPriority }
   rs.add(rsAdd);
 }
 
