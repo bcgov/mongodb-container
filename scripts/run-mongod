@@ -121,12 +121,12 @@ run_replicat_set_mgmt() {
   local DOMAIN_NAME=${FQDN#*.}
   local HOST_NAME=$FQDN
 
-  #log "Doing replica set configuration for $HOST_NAME"
-  #HOST_NAME=$HOST_NAME \
-  #mongosh_cmd --host ${MONGODB_PRIMARY} --port ${MONGODB_0_PORT} \
-  #  -u $MONGODB_ADMIN_USERNAME -p $MONGODB_ADMIN_PASSWORD \
-  #  -f /opt/scripts/config_replicat_set.js
-  #log "Done replica set configuration"
+  log "Doing replica set configuration for $HOST_NAME"
+  HOST_NAME=$HOST_NAME \
+  mongosh_cmd --host ${MONGODB_PRIMARY} --port ${MONGODB_0_PORT} \
+    -u $MONGODB_ADMIN_USERNAME -p $MONGODB_ADMIN_PASSWORD \
+    -f /opt/scripts/config_replicat_set.js
+  log "Done replica set configuration"
 }
 
 # Run a JS startup script. These scripts are run agains the
