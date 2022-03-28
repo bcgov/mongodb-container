@@ -123,7 +123,7 @@ run_replicat_set_mgmt() {
 
   #log "Doing replica set configuration for $HOST_NAME"
   #HOST_NAME=$HOST_NAME \
-  #mongosh_cmd --host ${MONGODB_SERVICE_NAME} --port ${MONGODB_0_PORT} \
+  #mongosh_cmd --host ${MONGODB_PRIMARY} --port ${MONGODB_0_PORT} \
   #  -u $MONGODB_ADMIN_USERNAME -p $MONGODB_ADMIN_PASSWORD \
   #  -f /opt/scripts/config_replicat_set.js
   #log "Done replica set configuration"

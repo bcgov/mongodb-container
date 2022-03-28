@@ -17,6 +17,10 @@ const fullHostName = process.env.HOST_NAME;
 const replicaSetName = process.env.MONGODB_REPLICA_NAME;
 const clusterName = process.env.MONGODB_CLUSTER_NAME;
 const mongoPrimary = process.env.MONGODB_PRIMARY;
+const mongo0Port = process.env.MONGODB_0_PORT;
+const mongo1Port = process.env.MONGODB_1_PORT;
+const mongo2Port = process.env.MONGODB_2_PORT;
+const mongoPrimaryCluster = process.env.MONGODB_PRIMARY_CLUSTER;
 
 const log = (message) => {
   print(`REPLICASET-SETUP: ${message}`);
@@ -42,12 +46,16 @@ var nodeID = parseInt(nodeNumber);
 
 // For cross-cluster configuration, get our port from the env var
 var myPort = "27017"
-if (nodeID == '0') { myPort = process.env.MONGDODB_0_PORT; }
-else if (nodeID == '1') { myPort = process.env.MONGDODB_1_PORT; }
-else if (nodeID == '2') { myPort = process.env.MONGDODB_2_PORT; }
+if (nodeID == '0') { myPort = mongo0Port; }
+else if (nodeID == '1') { myPort = mongo1Port; }
+else if (nodeID == '2') { myPort = mongo2Port; }
 
-// Set replica member name like: mongodb-0-gold:12345
-var replicaHostName = shortName + "-" + clusterName + ":" + myPort;
+// Set replica member name like: mongors-gold-0:12345
+// The hostname used when registering with the replica set must not match the
+// actual hostname, otherwise it won't be able to connect on the port used by
+// the TransportServerClaim, so we use "mongors-" as the RS member name.
+var replicaHostName = "mongors-" + clusterName + "-" + nodeID;
+var replicaHostNameAndPort = replicaHostName + ":" + myPort;
 var primaryPriority = 3;
 var secondaryPriority = 1;
 var memberExists = 0;
@@ -69,9 +77,9 @@ if (memberExists > 0) {
 //   this node with priority ${primaryPriority} (higher priority)
 // If any other node, add it with priority ${secondaryPriority} (lower priority)
 // -----------------------------------------------------------------------------
-if (shortName === mongoPrimary) {
+if (replicaHostName === mongoPrimary && clusterName == mongoPrimaryCluster) {
   log("Initializing replica set")
-  const rsConfig = { _id: replicaSetName, members: [{ _id: 0, host: replicaHostName, priority: primaryPriority }] }
+  const rsConfig = { _id: replicaSetName, members: [{ _id: 0, host: replicaHostNameAndPort, priority: primaryPriority }] }
   try {
     rs.initiate(rsConfig);
   } catch (e) {
@@ -82,7 +90,7 @@ if (shortName === mongoPrimary) {
 }
 else {
   log('Adding member to replica set');
-  const rsAdd = { _id: nodeID, host: replicaHostName, priority: secondaryPriority }
+  const rsAdd = { _id: nodeID, host: replicaHostNameAndPort, priority: secondaryPriority }
   rs.add(rsAdd);
 }
 
