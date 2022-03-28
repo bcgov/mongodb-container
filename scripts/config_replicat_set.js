@@ -86,11 +86,14 @@ else {
 //   this node with priority ${primaryPriority} (higher priority)
 // If any other node, add it with priority ${secondaryPriority} (lower priority)
 // -----------------------------------------------------------------------------
+log(`mongoPrimary: ${mongoPrimary}`);
+log(`clusterName: ${clusterName}`);
+log(`mongoPrimaryCluster: ${mongoPrimaryCluster}`);
 if (replicaHostName === mongoPrimary && clusterName == mongoPrimaryCluster) {
   log("Initializing replica set")
   const rsConfig = { _id: replicaSetName, members: [{ _id: rsNodeID, host: replicaHostNameAndPort, priority: primaryPriority }] }
   try {
-    rs.initiate(rsConfig);
+    //rs.initiate(rsConfig);
   } catch (e) {
     log('Failure initializing replica set');
     log(`ERROR errmsg: ${e.errmsg}`);
@@ -100,7 +103,7 @@ if (replicaHostName === mongoPrimary && clusterName == mongoPrimaryCluster) {
 else {
   log('Adding member to replica set');
   const rsAdd = { _id: rsNodeID, host: replicaHostNameAndPort, priority: secondaryPriority }
-  rs.add(rsAdd);
+  //rs.add(rsAdd);
 }
 
 log('Done.');
