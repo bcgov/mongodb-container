@@ -121,6 +121,11 @@ run_replicat_set_mgmt() {
   local DOMAIN_NAME=${FQDN#*.}
   local HOST_NAME=$FQDN
 
+  if [ "$MONGODB_CLUSTER_NAME" == "$MONGODB_PRIMARY_CLUSTER" -a "$SHORT_NAME" == "mongodb-0" ]; then
+    MONGODB_PRIMARY=mongodb-0
+    MONGODB_0_PORT=27017
+  fi
+
   log "Doing replica set configuration for $HOST_NAME"
   HOST_NAME=$HOST_NAME \
   mongosh_cmd --host ${MONGODB_PRIMARY} --port ${MONGODB_0_PORT} \
