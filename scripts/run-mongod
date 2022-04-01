@@ -126,6 +126,10 @@ run_replicat_set_mgmt() {
     MONGODB_0_PORT=27017
   fi
 
+  # Testing - add a pause before running mongosh
+  # --------------------------------------------
+  sleep 10
+
   log "Doing replica set configuration for $HOST_NAME"
   HOST_NAME=$HOST_NAME \
   mongosh_cmd --host ${MONGODB_PRIMARY} --port ${MONGODB_0_PORT} \
