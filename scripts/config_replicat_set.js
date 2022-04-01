@@ -15,6 +15,8 @@
 
 const fullHostName = process.env.HOST_NAME;
 const replicaSetName = process.env.MONGODB_REPLICA_NAME;
+var primaryPriority = 3;
+var secondaryPriority = 1;
 
 const log = (message) => {
   print(`REPLICASET-SETUP: ${message}`);
@@ -38,8 +40,6 @@ const [shortName, ...domainParts] = FQDN.split('.');
 const [nodeLabel, nodeNumber] = shortName.split('-');
 var nodeID = parseInt(nodeNumber);
 var replicaHostName = fullHostName;
-var primaryPriority = 3;
-var secondaryPriority = 1;
 var memberExists = 0;
 
 // See if the replica set is configured and contains this member.  If so, exit.

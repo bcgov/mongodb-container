@@ -33,7 +33,8 @@ readonly FQ_HOST_NAME="$(hostname -f)"
 #
 
 log() {
-  echo "INFO : $@";
+  TIMESTAMP=`date +"%F %T"`
+  echo "$TIMESTAMP INFO : $@";
 }
 
 # function to use by extension scripts instead of mongo shell binary
