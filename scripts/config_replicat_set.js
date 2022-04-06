@@ -63,7 +63,7 @@ if (shortName === "mongodb-0") {
   log("Initializing replica set")
   const rsConfig = { _id: replicaSetName, members: [{ _id: 0, host: replicaHostName, priority: primaryPriority }] }
   try {
-    //rs.initiate(rsConfig);
+    rs.initiate(rsConfig);
   } catch (e) {
     log('Failure initializing replica set');
     log(`ERROR errmsg: ${e.errmsg}`);
@@ -73,7 +73,7 @@ if (shortName === "mongodb-0") {
 else {
   log('Adding member to replica set');
   const rsAdd = { _id: nodeID, host: replicaHostName, priority: secondaryPriority }
-  //rs.add(rsAdd);
+  rs.add(rsAdd);
 }
 
 log('Done.');
