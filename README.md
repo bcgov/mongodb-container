@@ -37,7 +37,7 @@ Included in this repo is a `CronJob`. Use it to periodically rebuild the image s
 
 ## Run
 
-This image will always start as a replica set. In your **dev** environment just spin up a single pod; in **test** you can one or two; and in **prod** run three pods. If you want nothing to do with a replica set run the official mongoDB images.
+This image will always start as a replica set. In your **dev** environment just spin up a single pod; in **test and prod** run three pods. If you want nothing to do with a replica set run the official mongoDB images.
 
 This is a drop-in replacement for the now deprecated RedHat mongoDB image. It will need the following environment variables set:
 
@@ -97,11 +97,14 @@ The `mongo` CLI is your friend. You can connect to the mongoDB directly with the
 mongo -u ${MONGODB_ADMIN_USERNAME} -p ${MONGODB_ADMIN_PASSWORD} --host ${MONGODB_SERVICE_NAME}
 ```
 
-Omit the `--host` parameter if you like, it will connect to the mongoDB instance running in the pod your terminal is open on.
+You may omit the `--host` parameter if you run this command on the primary (mongodb-0), as it will connect to the mongoDB instance running on the local server.
 
 2. Replica Set Management
 
 Learn about and manage the RS with the `rs` command set:
+
+`rs.conf()`
+View the replica set configuration.
 
 `rs.status()`
 Use this command to learn about your RS.
@@ -116,7 +119,7 @@ Review the online documentation for more commands as needed.
 
 3. Shutdown
 
-When the container (pod) needs to shutdown it will also turn down the mongoDB instance in a sane way. If you want to do this manually, here are a few points to note:
+When the container (pod) needs to shut down it will also turn down the mongoDB instance in a sane way. If you want to do this manually, here are a few points to note:
 
 - Run `db.runCommand({ replSetFreeze: numOfSeconds })` on SECONDARY to prevent it/them fom promoting to primary.
   
@@ -140,6 +143,5 @@ When the container starts it will automatically initialize the RS and add itself
 mongo --quiet --host 127.0.0.1 --port 27017 -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --eval "db.adminCommand('ping')"
 ```
 
-- Look into if, as a best practice, nodes are removed from a replica set on shutdown.
-
 - Add mongo-shell to the image and use that to set up and configure the hosts: https://downloads.mongodb.com/compass/mongosh-1.0.0-linux-x64.tgz
+

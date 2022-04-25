@@ -25,16 +25,16 @@ readonly MAX_ATTEMPTS=60
 readonly SLEEP_TIME=1
 readonly ROOT_AUTH_DB='admin'
 # Fully Qualifed Nost Name
-# ie. mongodb-0.mongodb-internal.6e2f11-prod.svc.cluster.local
+# ie. mongodb-0.mongodb-internal.abc123-prod.svc.cluster.local
 readonly FQ_HOST_NAME="$(hostname -f)"
 
 #
-# funcitons
+# functions
 #
 
 log() {
   TIMESTAMP=`date +"%F %T"`
-  echo "$TIMESTAMP INFO : $@";
+  echo "$TIMESTAMP [run-mongod]: $@";
 }
 
 # function to use by extension scripts instead of mongo shell binary
@@ -166,7 +166,7 @@ usage() {
   MONGODB_ADMIN_PASSWORD
 
   Replication is enabled by default and cannot be turned
-  down, so you must also provide he following environment
+  down, so you must also provide the following environment
   variables:
   MONGODB_KEYFILE_VALUE
   MONGODB_REPLICA_NAME
