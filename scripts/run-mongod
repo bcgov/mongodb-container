@@ -116,7 +116,7 @@ _wait_for_mongo() {
   return 1
 }
 
-run_replicat_set_mgmt() {
+run_replica_set_mgmt() {
   local FQDN=$1
   local SHORT_NAME=${FQDN%%.*}
   local DOMAIN_NAME=${FQDN#*.}
@@ -132,7 +132,7 @@ run_replicat_set_mgmt() {
   HOST_NAME=$HOST_NAME \
   mongosh_cmd --host $PRIMARY \
     -u $MONGODB_ADMIN_USERNAME -p $MONGODB_ADMIN_PASSWORD \
-    -f /opt/scripts/config_replicat_set.js
+    -f /opt/scripts/config_replica_set.js
   log "Done replica set configuration"
 }
 
@@ -219,7 +219,7 @@ wait_for_mongo_up
 
 touch /tmp/initialized
 
-run_replicat_set_mgmt "${FQ_HOST_NAME}"
+run_replica_set_mgmt "${FQ_HOST_NAME}"
 
 
 log "mongoDB is initalized and ready for action"
