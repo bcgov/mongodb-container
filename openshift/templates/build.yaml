@@ -32,14 +32,14 @@ objects:
   - apiVersion: v1
     kind: ImageStream
     metadata:
-      name: mongodb-44-ha
+      name: mongodb-42-ha
     spec:
       lookupPolicy:
         local: false
   - apiVersion: v1
     kind: BuildConfig
     metadata:
-      name: mongodb-44-ha
+      name: mongodb-42-ha
     spec:
       resources:
         limits:
@@ -51,7 +51,7 @@ objects:
       output:
         to:
           kind: ImageStreamTag
-          name: "mongodb-44-ha:${VERSION}"
+          name: "mongodb-42-ha:${VERSION}"
       source:
         secrets:
         - secret:
