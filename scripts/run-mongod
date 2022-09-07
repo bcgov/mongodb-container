@@ -220,7 +220,9 @@ wait_for_mongo_up
 
 touch /tmp/initialized
 
-run_replicat_set_mgmt "${FQ_HOST_NAME}"
+# When setting up a replica set for the first time, do it manually, otherwise there
+# will be errors
+#run_replicat_set_mgmt "${FQ_HOST_NAME}"
 
 
 log "mongoDB is initalized and ready for action"
