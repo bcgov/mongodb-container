@@ -27,7 +27,7 @@ parameters:
   - name: GIT_URI
     value: "https://github.com/bcgov/mongodb-replicaset-container.git"
   - name: GIT_REF
-    value: "4.4"
+    value: "4.2"
 objects:
   - apiVersion: v1
     kind: ImageStream
