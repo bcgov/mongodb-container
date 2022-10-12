@@ -219,8 +219,8 @@ wait_for_mongo_up
 
 touch /tmp/initialized
 
-# Pause to allow other replica set members to start up
-sleep 120
+# Pause to allow hostname to get registered in DNS
+sleep 30
 run_replica_set_mgmt "${FQ_HOST_NAME}"
 
 
