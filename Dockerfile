@@ -9,14 +9,14 @@ container image contains programs to run mongod server."
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
       io.k8s.description="$DESCRIPTION" \
-      io.k8s.display-name="MongoDB 4.4" \
+      io.k8s.display-name="MongoDB 6.0" \
       io.openshift.expose-services="27017:mongodb" \
       io.openshift.tags="database,mongodb,rh-mongodb44" \
       name="bcgov/mongodb-44-rhel8" \
       usage="docker run -d -e MONGODB_ADMIN_PASSWORD=my_pass rhscl/mongodb-44-rhel8" \
       version="1"
 
-ENV MONGODB_VERSION=4.4 \
+ENV MONGODB_VERSION=6.0 \
     HOME=/var/lib/mongo \
     SCRIPTS_PATH=/opt/bin
 ENV PATH=$SCRIPTS_PATH:$PATH

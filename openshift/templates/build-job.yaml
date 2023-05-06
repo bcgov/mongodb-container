@@ -16,7 +16,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: build-mongodb-44-ha
+  name: build-mongodb-60-ha
 spec:
   schedule: "14 4 * * 4" # prod
   concurrencyPolicy: Forbid
@@ -40,7 +40,7 @@ spec:
                 - /bin/sh
               args:
                 - -c
-                - oc start-build mongodb-44-ha --follow
+                - oc start-build mongodb-60-ha --follow
           restartPolicy: OnFailure
           serviceAccountName: cicd
           # imagePullSecrets:

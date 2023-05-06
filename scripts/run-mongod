@@ -41,7 +41,7 @@ log() {
 # - to be able to change shell params in all scripts
 # for example to use SSL certificate
 mongo_cmd() {
-  mongo --quiet $@;
+  mongosh --quiet $@;
 }
 
 mongosh_cmd() {
