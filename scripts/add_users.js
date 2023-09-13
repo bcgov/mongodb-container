@@ -27,7 +27,10 @@ const rootUser = {
 const appUser = {
   user: process.env.MONGODB_USER,
   pwd: process.env.MONGODB_PASSWORD,
-  roles: [{ role: 'dbOwner', db: process.env.MONGODB_DATABASE }]
+  roles: [
+    { role: 'dbOwner', db: process.env.MONGODB_DATABASE },
+    { role: 'clusterMonitor', db: adminDB }
+  ]
 };
 
 const log = (message) => {
@@ -49,7 +52,12 @@ const main = () => {
     log("Admin user already exists. Skipping.");
   }
 
-  mydb = conn.getDB(process.env.MONGODB_DATABASE);
+  // In order for Rocketchat to be able to get MongoDB info, it needs to be able
+  // to run db.serverStatus() on the admin DB, so we create appUser in the 
+  // admin DB instead of rocketdb and add the clusterMonitor role for the admin
+  // DB.  We also change MONGO_URL in the Deployment, adding 'authSource=admin'.
+  //mydb = conn.getDB(process.env.MONGODB_DATABASE);
+  mydb = conn.getDB(adminDB);
   if (!mydb.getUser(process.env.MONGODB_USER)) {
     log("Adding application user.");
     mydb.createUser(appUser);
