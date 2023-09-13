@@ -11,8 +11,8 @@ LABEL summary="$SUMMARY" \
       io.k8s.description="$DESCRIPTION" \
       io.k8s.display-name="MongoDB 6.0" \
       io.openshift.expose-services="27017:mongodb" \
-      io.openshift.tags="database,mongodb,rh-mongodb44" \
-      name="bcgov/mongodb-44-rhel8" \
+      io.openshift.tags="database,mongodb,mongodb60" \
+      name="bcgov/mongodb-60" \
       usage="docker run -d -e MONGODB_ADMIN_PASSWORD=my_pass rhscl/mongodb-44-rhel8" \
       version="1"
 
